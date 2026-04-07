@@ -36,7 +36,7 @@ jobs:
           sudo apt-get install -y xvfb libgbm-dev
 
       - name: 🎥 Remotion 렌더링 실행
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1080x1920x24 -ac" node server/render-engine/github-render.js
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1080x1920x24 -ac" node render-engine/github-render.js
         env:
           VIDEO_JSON_BASE64: ${{ github.event.inputs.videoJson }}
 
