@@ -1,0 +1,47 @@
+name: 🎬 JSON to Remotion Video Renderer
+
+on:
+  workflow_dispatch:
+    inputs:
+      videoJson:
+        description: 'Base64 Encoded JSON Data for Video'
+        required: true
+
+jobs:
+  render-video:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: 🛠️ pnpm 설치
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: 🟢 Node.js 세팅
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm' 
+
+      - name: 📦 의존성 설치
+        run: pnpm install
+
+      - name: 🛡️ 리눅스 환경 세팅 (렌더링용)
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgbm-dev
+
+      - name: 🎥 Remotion 렌더링 실행
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1080x1920x24 -ac" node server/render-engine/github-render.js
+        env:
+          VIDEO_JSON_BASE64: ${{ github.event.inputs.videoJson }}
+
+      - name: 🚀 Upload Video Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-video
+          path: output/final_shorts.mp4

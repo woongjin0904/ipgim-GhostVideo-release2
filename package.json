@@ -1,0 +1,29 @@
+{
+  "name": "ghostwriter-render-server",
+  "version": "1.0.0",
+  "description": "GhostWriter Remotion Rendering Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "render": "node github-render.js"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.0",
+    "@remotion/renderer": "^4.0.0",
+    "@twick/core": "^0.15.27",
+    "@twick/render-server": "^0.15.27",
+    "@twick/renderer": "^0.15.27",
+    "@twick/visualizer": "^0.15.27",
+    "cheerio": "^1.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "google-auth-library": "^10.6.2",
+    "google-spreadsheet": "^5.2.0",
+    "puppeteer": "^24.40.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "remotion": "^4.0.0",
+    "sqlite3": "^5.1.7"
+  }
+}
