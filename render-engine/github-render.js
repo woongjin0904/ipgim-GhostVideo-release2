@@ -1,16 +1,14 @@
-
 const fs = require('fs');
 const path = require('path');
 const { bundle } = require('@remotion/bundler');
 const { renderMedia, selectComposition } = require('@remotion/renderer');
 
-const outputDir = path.join(__dirname, '../../output');
+const outputDir = path.join(__dirname, '../output');
 if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
 async function runJsonToVideoRender() {
     console.log("🚀 GitHub Actions: JSON to Remotion 엔진 가동!");
 
-    // 1. GitHub Actions에서 전달받은 Base64 JSON 디코딩
     const base64Json = process.env.VIDEO_JSON_BASE64 || "";
     let videoData = {};
     try {
@@ -22,18 +20,15 @@ async function runJsonToVideoRender() {
         process.exit(1);
     }
 
-    // 2. 총 렌더링 프레임 계산 (각 씬의 duration 합산)
     let totalFrames = 0;
     if (videoData.scenes && videoData.scenes.length > 0) {
         videoData.scenes.forEach(scene => {
-            totalFrames += scene.durationInFrames || 90; // 기본값 90프레임
+            totalFrames += scene.durationInFrames || 90;
         });
     } else {
-        totalFrames = 150; // 씬이 없을 경우 최소 5초(30fps)
+        totalFrames = 150;
     }
 
-    // 3. Remotion Root 설정 파일 동적 생성
-    // JSON 구조를 동적으로 렌더링할 수 있는 DynamicTemplate 컴포넌트를 사용합니다.
     const rootPath = path.resolve(__dirname, 'Root.jsx');
     const rootCode = `
         import React from 'react';
@@ -55,7 +50,6 @@ async function runJsonToVideoRender() {
     `;
     fs.writeFileSync(rootPath, rootCode, 'utf8');
 
-    // 4. 번들링 진입점 생성 (폰트 포함)
     const entryPath = path.resolve(__dirname, 'index.js');
     const entryCode = `
         import { registerRoot } from 'remotion';
@@ -82,7 +76,6 @@ async function runJsonToVideoRender() {
             webpackOverride: (config) => config,
         });
 
-        // JSON 데이터를 Remotion 컴포넌트의 props로 주입합니다.
         const inputProps = { videoData };
 
         const composition = await selectComposition({
