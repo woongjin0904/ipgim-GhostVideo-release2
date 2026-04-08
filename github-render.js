@@ -3,7 +3,7 @@ const path = require('path');
 const { bundle } = require('@remotion/bundler');
 const { renderMedia, selectComposition } = require('@remotion/renderer');
 
-const outputDir = path.join(__dirname, '../output');
+const outputDir = path.join(__dirname, 'output');
 if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
 async function runJsonToVideoRender() {
