@@ -6,7 +6,9 @@ on:
       videoJson:
         description: 'Base64 Encoded JSON Data for Video'
         required: true
-
+      templateCode:
+        description: 'Base64 Encoded React template code'
+        required: true
 jobs:
   render-video:
     runs-on: ubuntu-latest
