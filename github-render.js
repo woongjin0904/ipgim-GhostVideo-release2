@@ -10,6 +10,8 @@ async function runJsonToVideoRender() {
     console.log("🚀 GitHub Actions: JSON to Remotion 엔진 가동!");
 
     const base64Json = process.env.VIDEO_JSON_BASE64 || "";
+    const base64TemplateCode = process.env.TEMPLATE_CODE_BASE64 || "";
+
     let videoData = {};
     try {
         const decodedString = Buffer.from(base64Json, 'base64').toString('utf8');
@@ -17,6 +19,17 @@ async function runJsonToVideoRender() {
         console.log(`[INFO] 파싱된 JSON 타이틀: ${videoData.title}`);
     } catch (e) {
         console.error("❌ JSON 파싱 실패:", e);
+        process.exit(1);
+    }
+
+    // 💡 [핵심] 백엔드에서 넘겨받은 템플릿 코드를 파일로 물리적 저장
+    if (base64TemplateCode) {
+        const templateCode = Buffer.from(base64TemplateCode, 'base64').toString('utf8');
+        const templatePath = path.resolve(__dirname, 'DynamicTemplate.jsx');
+        fs.writeFileSync(templatePath, templateCode, 'utf8');
+        console.log("[INFO] 백엔드에서 전달받은 DynamicTemplate.jsx를 생성 완료했습니다.");
+    } else {
+        console.error("❌ 템플릿 코드가 전달되지 않았습니다.");
         process.exit(1);
     }
 
