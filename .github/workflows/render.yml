@@ -37,12 +37,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb libgbm-dev
 
+      - name: 📥 렌더링 데이터 다운로드
+        run: curl -o render_data.json "${{ github.event.inputs.dataUrl }}"
+
       - name: 🎥 Remotion 렌더링 실행
         run: xvfb-run --auto-servernum --server-args="-screen 0 1080x1920x24 -ac" node github-render.js
         env:
-          VIDEO_JSON_BASE64: ${{ github.event.inputs.videoJson }}
-          TEMPLATE_CODE_BASE64: ${{ github.event.inputs.templateCode }}
-
+          DATA_FILE_PATH: "render_data.json"
+          
       - name: 🚀 Upload Video Artifact
         uses: actions/upload-artifact@v4
         with:

@@ -9,22 +9,33 @@ if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 async function runJsonToVideoRender() {
     console.log("🚀 GitHub Actions: JSON to Remotion 엔진 가동!");
 
-    const base64Json = process.env.VIDEO_JSON_BASE64 || "";
-    const base64TemplateCode = process.env.TEMPLATE_CODE_BASE64 || "";
-
-    let videoData = {};
-    try {
-        const decodedString = Buffer.from(base64Json, 'base64').toString('utf8');
-        videoData = JSON.parse(decodedString);
-        console.log(`[INFO] 파싱된 JSON 타이틀: ${videoData.title}`);
-    } catch (e) {
-        console.error("❌ JSON 파싱 실패:", e);
+    // 💡 [수정됨] Base64 환경변수 대신 다운로드된 파일을 읽어옵니다.
+    const dataFilePath = path.resolve(__dirname, process.env.DATA_FILE_PATH || 'render_data.json');
+    
+    if (!fs.existsSync(dataFilePath)) {
+        console.error("❌ 다운로드된 데이터 파일이 없습니다!");
         process.exit(1);
     }
 
-    // 💡 [핵심] 백엔드에서 넘겨받은 템플릿 코드를 파일로 물리적 저장
-    if (base64TemplateCode) {
-        const templateCode = Buffer.from(base64TemplateCode, 'base64').toString('utf8');
+    let hugeData = {};
+    try {
+        const rawData = fs.readFileSync(dataFilePath, 'utf8');
+        hugeData = JSON.parse(rawData);
+    } catch (e) {
+        console.error("❌ JSON 파일 파싱 실패:", e);
+        process.exit(1);
+    }
+
+    const videoData = hugeData.previewData;
+    const templateCode = hugeData.templateCodeStr;
+
+    if (!videoData || !videoData.scenes) {
+        console.error("❌ 유효한 비디오 데이터가 없습니다.");
+        process.exit(1);
+    }
+    console.log(`[INFO] 파싱된 JSON 타이틀: ${videoData.title}`);
+
+    if (templateCode) {
         const templatePath = path.resolve(__dirname, 'DynamicTemplate.jsx');
         fs.writeFileSync(templatePath, templateCode, 'utf8');
         console.log("[INFO] 백엔드에서 전달받은 DynamicTemplate.jsx를 생성 완료했습니다.");
