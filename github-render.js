@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const zlib = require('zlib'); // 💡 [추가] 압축 해제용 내장 모듈
 const { bundle } = require('@remotion/bundler');
 const { renderMedia, selectComposition } = require('@remotion/renderer');
 
@@ -10,39 +9,30 @@ if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 async function runJsonToVideoRender() {
     console.log("🚀 GitHub Actions: JSON to Remotion 엔진 가동!");
 
-    // 💡 1. 깃허브 환경변수에서 압축된 문자열 꺼내기
-    const compressedBase64 = process.env.COMPRESSED_PAYLOAD || "";
-    
-    if (!compressedBase64) {
-        console.error("❌ 압축된 페이로드가 전달되지 않았습니다.");
-        process.exit(1);
-    }
-
     let videoData = {};
-    let templateCode = "";
 
     try {
-        const buffer = Buffer.from(compressedBase64, 'base64');
-        const decompressedString = zlib.inflateSync(buffer).toString('utf8');
-        const hugeData = JSON.parse(decompressedString);
-
-        videoData = hugeData.previewData;
-        templateCode = hugeData.templateCodeStr;
+        // 💡 1. 깃허브 액션(render.yml)이 다운로드해둔 video.json 읽기
+        const jsonPath = path.join(__dirname, 'video.json');
+        if (!fs.existsSync(jsonPath)) {
+            throw new Error("video.json 파일이 존재하지 않습니다. 다운로드에 실패했을 수 있습니다.");
+        }
+        const jsonString = fs.readFileSync(jsonPath, 'utf8');
+        videoData = JSON.parse(jsonString);
         
-        console.log(`[INFO] ✅ 압축 해제 및 데이터 파싱 성공! (타이틀: ${videoData.title})`);
+        console.log(`[INFO] ✅ JSON 데이터 로드 완료! (타이틀: ${videoData.title})`);
     } catch (e) {
-        console.error("❌ 데이터 압축 해제 실패:", e);
+        console.error("❌ 데이터 로드 및 파싱 실패:", e);
         process.exit(1);
     }
 
-    if (templateCode) {
-        const templatePath = path.resolve(__dirname, 'DynamicTemplate.jsx');
-        fs.writeFileSync(templatePath, templateCode, 'utf8');
-        console.log("[INFO] 백엔드에서 전달받은 DynamicTemplate.jsx를 생성 완료했습니다.");
-    } else {
-        console.error("❌ 템플릿 코드가 전달되지 않았습니다.");
+    // 💡 2. render.yml이 생성해둔 템플릿 파일이 잘 있는지 확인
+    const templatePath = path.resolve(__dirname, 'DynamicTemplate.jsx');
+    if (!fs.existsSync(templatePath)) {
+        console.error("❌ DynamicTemplate.jsx 파일이 존재하지 않습니다.");
         process.exit(1);
     }
+    console.log("[INFO] ✅ 템플릿 코드 파일 확인 완료.");
 
     let totalFrames = 0;
     if (videoData.scenes && videoData.scenes.length > 0) {

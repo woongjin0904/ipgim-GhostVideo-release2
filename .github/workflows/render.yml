@@ -39,8 +39,8 @@ jobs:
 
       - name: 📥 JSON 및 템플릿 다운로드
         run: |
-          curl -L "${{ github.event.inputs.videoJsonUrl }}" -o src/video.json
-          echo "${{ github.event.inputs.templateCode }}" | base64 --decode > src/Template.jsx
+          curl -L "${{ github.event.inputs.videoJsonUrl }}" -o video.json
+          echo "${{ github.event.inputs.templateCode }}" | base64 --decode > DynamicTemplate.jsx
 
       - name: 🎥 Remotion 렌더링 실행
         run: xvfb-run --auto-servernum --server-args="-screen 0 1080x1920x24 -ac" node github-render.js
