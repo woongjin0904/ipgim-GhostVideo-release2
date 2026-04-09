@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib'); // 💡 [추가] 압축 해제용 내장 모듈
 const { bundle } = require('@remotion/bundler');
 const { renderMedia, selectComposition } = require('@remotion/renderer');
 
@@ -9,31 +10,30 @@ if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 async function runJsonToVideoRender() {
     console.log("🚀 GitHub Actions: JSON to Remotion 엔진 가동!");
 
-    // 💡 [수정됨] Base64 환경변수 대신 다운로드된 파일을 읽어옵니다.
-    const dataFilePath = path.resolve(__dirname, process.env.DATA_FILE_PATH || 'render_data.json');
+    // 💡 1. 깃허브 환경변수에서 압축된 문자열 꺼내기
+    const compressedBase64 = process.env.COMPRESSED_PAYLOAD || "";
     
-    if (!fs.existsSync(dataFilePath)) {
-        console.error("❌ 다운로드된 데이터 파일이 없습니다!");
+    if (!compressedBase64) {
+        console.error("❌ 압축된 페이로드가 전달되지 않았습니다.");
         process.exit(1);
     }
 
-    let hugeData = {};
+    let videoData = {};
+    let templateCode = "";
+
     try {
-        const rawData = fs.readFileSync(dataFilePath, 'utf8');
-        hugeData = JSON.parse(rawData);
+        const buffer = Buffer.from(compressedBase64, 'base64');
+        const decompressedString = zlib.inflateSync(buffer).toString('utf8');
+        const hugeData = JSON.parse(decompressedString);
+
+        videoData = hugeData.previewData;
+        templateCode = hugeData.templateCodeStr;
+        
+        console.log(`[INFO] ✅ 압축 해제 및 데이터 파싱 성공! (타이틀: ${videoData.title})`);
     } catch (e) {
-        console.error("❌ JSON 파일 파싱 실패:", e);
+        console.error("❌ 데이터 압축 해제 실패:", e);
         process.exit(1);
     }
-
-    const videoData = hugeData.previewData;
-    const templateCode = hugeData.templateCodeStr;
-
-    if (!videoData || !videoData.scenes) {
-        console.error("❌ 유효한 비디오 데이터가 없습니다.");
-        process.exit(1);
-    }
-    console.log(`[INFO] 파싱된 JSON 타이틀: ${videoData.title}`);
 
     if (templateCode) {
         const templatePath = path.resolve(__dirname, 'DynamicTemplate.jsx');
