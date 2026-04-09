@@ -3,11 +3,11 @@ name: 🎬 JSON to Remotion Video Renderer
 on:
   workflow_dispatch:
     inputs:
-      videoJson:
-        description: 'Base64 Encoded JSON Data for Video'
+      videoJsonUrl:  
+        description: 'JSON Download URL'
         required: true
       templateCode:
-        description: 'Base64 Encoded React template code'
+        description: 'Template Code (Base64)'
         required: true
 jobs:
   render-video:
@@ -37,11 +37,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb libgbm-dev
 
-      # 🚀 외부 다운로드 없이 환경변수로 압축 데이터를 다이렉트 주입!
+      - name: 📥 JSON 및 템플릿 다운로드
+        run: |
+          curl -L "${{ github.event.inputs.videoJsonUrl }}" -o src/video.json
+          echo "${{ github.event.inputs.templateCode }}" | base64 --decode > src/Template.jsx
+
       - name: 🎥 Remotion 렌더링 실행
         run: xvfb-run --auto-servernum --server-args="-screen 0 1080x1920x24 -ac" node github-render.js
-        env:
-          COMPRESSED_PAYLOAD: ${{ github.event.inputs.payload }}
 
       - name: 🚀 Upload Video Artifact
         uses: actions/upload-artifact@v4
