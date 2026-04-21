@@ -63,14 +63,41 @@ async function runJsonToVideoRender() {
         };
     `;
     fs.writeFileSync(rootPath, rootCode, 'utf8');
-
-    // 💡 1. CSS 파일을 직접 생성합니다.
+// 💡 1. CSS 파일을 직접 생성합니다. (기존 유지)
     const cssPath = path.resolve(__dirname, 'global.css');
     const cssCode = `
         @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
         * { font-family: 'Pretendard', sans-serif !important; }
     `;
     fs.writeFileSync(cssPath, cssCode, 'utf8');
+
+    // 💡 2. 동적 JS 주입 시 Remotion의 delayRender 적용 (수정됨)
+    const entryPath = path.resolve(__dirname, 'index.js');
+    const entryCode = `
+        import { registerRoot, delayRender, continueRender } from 'remotion';
+        import { RemotionRoot } from './Root';
+        import './global.css'; 
+
+        // 🚀 폰트 다운로드가 끝날 때까지 렌더링 엔진 강제 정지
+        const waitForFont = delayRender("Waiting for Pretendard Font");
+
+        // 브라우저 메모리에 폰트 직접 로드 요청
+        const font = new FontFace(
+            'Pretendard',
+            'url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/woff2/Pretendard-Regular.woff2") format("woff2")'
+        );
+
+        font.load().then(() => {
+            document.fonts.add(font);
+            continueRender(waitForFont); // 로드 완료 시 렌더링 재개
+        }).catch((err) => {
+            console.error("❌ 폰트 로드 실패 (기본 폰트로 진행):", err);
+            continueRender(waitForFont); // 실패하더라도 무한 멈춤 방지
+        });
+
+        registerRoot(RemotionRoot);
+    `;
+    fs.writeFileSync(entryPath, entryCode, 'utf8');
 
     // 💡 2. 동적 JS 주입을 제거하고 일반적인 CSS Import 방식으로 바꿉니다.
     const entryPath = path.resolve(__dirname, 'index.js');
