@@ -63,15 +63,15 @@ async function runJsonToVideoRender() {
         };
     `;
     fs.writeFileSync(rootPath, rootCode, 'utf8');
-// 💡 1. CSS 파일 생성 (가장 안정적인 v1.3.9 최신 버전 및 min.css 사용)
+// 💡 1. CSS 파일 생성 (안정적인 NPM CDN 사용)
     const cssPath = path.resolve(__dirname, 'global.css');
     const cssCode = `
-        @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+        @import url("https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css");
         * { font-family: 'Pretendard', sans-serif !important; }
     `;
     fs.writeFileSync(cssPath, cssCode, 'utf8');
 
-    // 💡 2. 동적 JS 주입 시 Remotion의 delayRender 적용 + 안전장치(Fallback 타이머)
+    // 💡 2. 동적 JS 주입 (NPM CDN 및 안전한 타임아웃 래퍼 적용)
     const entryPath = path.resolve(__dirname, 'index.js');
     const entryCode = `
         import { registerRoot, delayRender, continueRender } from 'remotion';
@@ -82,7 +82,7 @@ async function runJsonToVideoRender() {
         const waitForFont = delayRender("Waiting for Pretendard Font");
         let isFontRendered = false;
 
-        // 중복 해제 방지를 위한 안전한 continueRender 래퍼 함수
+        // 중복 해제 방지를 위한 안전한 continueRender 래퍼 함수 (멀티 탭 충돌 방지)
         const safeContinueRender = () => {
             if (!isFontRendered) {
                 isFontRendered = true;
@@ -90,9 +90,10 @@ async function runJsonToVideoRender() {
             }
         };
 
+        // GitHub(gh) CDN이 아닌 NPM CDN으로 직접 요청하여 404 원천 차단
         const font = new FontFace(
             'Pretendard',
-            'url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2") format("woff2")'
+            'url("https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2") format("woff2")'
         );
 
         font.load().then(() => {
@@ -104,10 +105,10 @@ async function runJsonToVideoRender() {
             safeContinueRender();
         });
 
-        // 🚨 최후의 보루: CDN 에러나 네트워크 지연으로 무한정 멈추는 것을 방지 (10초 후 강제 렌더링 시작)
+        // 🚨 최후의 보루: 10초 후 강제 렌더링 시작
         setTimeout(() => {
             if (!isFontRendered) {
-                console.warn("⏳ 폰트 로딩 시간 초과! 렌더링 락 강제 해제");
+                console.warn("⏳ 폰트 로딩 타임아웃! 렌더링 락 강제 해제");
                 safeContinueRender();
             }
         }, 10000);
@@ -115,7 +116,7 @@ async function runJsonToVideoRender() {
         registerRoot(RemotionRoot);
     `;
     fs.writeFileSync(entryPath, entryCode, 'utf8');
-    
+
     console.log(`[INFO] 번들링 시작 (Total Frames: ${totalFrames})...`);
 
     try {
