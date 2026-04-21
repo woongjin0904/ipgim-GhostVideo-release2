@@ -63,20 +63,22 @@ async function runJsonToVideoRender() {
         };
     `;
     fs.writeFileSync(rootPath, rootCode, 'utf8');
+eSync(rootPath, rootCode, 'utf8');
 
+    // 💡 1. CSS 파일을 직접 생성합니다.
+    const cssPath = path.resolve(__dirname, 'global.css');
+    const cssCode = `
+        @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
+        * { font-family: 'Pretendard', sans-serif !important; }
+    `;
+    fs.writeFileSync(cssPath, cssCode, 'utf8');
+
+    // 💡 2. 동적 JS 주입을 제거하고 일반적인 CSS Import 방식으로 바꿉니다.
     const entryPath = path.resolve(__dirname, 'index.js');
     const entryCode = `
         import { registerRoot } from 'remotion';
         import { RemotionRoot } from './Root';
-        
-        const fontCSS = \`
-            @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
-            * { font-family: 'Pretendard', sans-serif !important; }
-        \`;
-        const styleSheet = document.createElement("style");
-        styleSheet.type = "text/css";
-        styleSheet.innerText = fontCSS;
-        document.head.appendChild(styleSheet);
+        import './global.css'; 
 
         registerRoot(RemotionRoot);
     `;
