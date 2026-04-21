@@ -63,7 +63,8 @@ async function runJsonToVideoRender() {
         };
     `;
     fs.writeFileSync(rootPath, rootCode, 'utf8');
-// 💡 1. CSS 파일을 직접 생성합니다. (기존 유지)
+
+    // 💡 3. CSS 파일을 직접 생성합니다.
     const cssPath = path.resolve(__dirname, 'global.css');
     const cssCode = `
         @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
@@ -71,7 +72,7 @@ async function runJsonToVideoRender() {
     `;
     fs.writeFileSync(cssPath, cssCode, 'utf8');
 
-    // 💡 2. 동적 JS 주입 시 Remotion의 delayRender 적용 (수정됨)
+    // 💡 4. 동적 JS 주입 시 Remotion의 delayRender 적용 (중복 선언 제거 완료)
     const entryPath = path.resolve(__dirname, 'index.js');
     const entryCode = `
         import { registerRoot, delayRender, continueRender } from 'remotion';
@@ -94,17 +95,6 @@ async function runJsonToVideoRender() {
             console.error("❌ 폰트 로드 실패 (기본 폰트로 진행):", err);
             continueRender(waitForFont); // 실패하더라도 무한 멈춤 방지
         });
-
-        registerRoot(RemotionRoot);
-    `;
-    fs.writeFileSync(entryPath, entryCode, 'utf8');
-
-    // 💡 2. 동적 JS 주입을 제거하고 일반적인 CSS Import 방식으로 바꿉니다.
-    const entryPath = path.resolve(__dirname, 'index.js');
-    const entryCode = `
-        import { registerRoot } from 'remotion';
-        import { RemotionRoot } from './Root';
-        import './global.css'; 
 
         registerRoot(RemotionRoot);
     `;
@@ -152,4 +142,4 @@ async function runJsonToVideoRender() {
     }
 }
 
-runJsonToVideoRender();
+runJsonToVideoRender(); 
