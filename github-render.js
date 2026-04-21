@@ -63,16 +63,15 @@ async function runJsonToVideoRender() {
         };
     `;
     fs.writeFileSync(rootPath, rootCode, 'utf8');
-
-    // 💡 3. CSS 파일을 직접 생성합니다.
+// 💡 1. CSS 파일 생성 (가장 안정적인 v1.3.9 최신 버전 및 min.css 사용)
     const cssPath = path.resolve(__dirname, 'global.css');
     const cssCode = `
-        @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
+        @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
         * { font-family: 'Pretendard', sans-serif !important; }
     `;
     fs.writeFileSync(cssPath, cssCode, 'utf8');
 
-    // 💡 4. 동적 JS 주입 시 Remotion의 delayRender 적용 (중복 선언 제거 완료)
+    // 💡 2. 동적 JS 주입 시 Remotion의 delayRender 적용 + 안전장치(Fallback 타이머)
     const entryPath = path.resolve(__dirname, 'index.js');
     const entryCode = `
         import { registerRoot, delayRender, continueRender } from 'remotion';
@@ -81,25 +80,42 @@ async function runJsonToVideoRender() {
 
         // 🚀 폰트 다운로드가 끝날 때까지 렌더링 엔진 강제 정지
         const waitForFont = delayRender("Waiting for Pretendard Font");
+        let isFontRendered = false;
 
-        // 브라우저 메모리에 폰트 직접 로드 요청
+        // 중복 해제 방지를 위한 안전한 continueRender 래퍼 함수
+        const safeContinueRender = () => {
+            if (!isFontRendered) {
+                isFontRendered = true;
+                continueRender(waitForFont);
+            }
+        };
+
         const font = new FontFace(
             'Pretendard',
-            'url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/woff2/Pretendard-Regular.woff2") format("woff2")'
+            'url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2") format("woff2")'
         );
 
         font.load().then(() => {
             document.fonts.add(font);
-            continueRender(waitForFont); // 로드 완료 시 렌더링 재개
+            console.log("✅ Pretendard 폰트 로드 완료!");
+            safeContinueRender();
         }).catch((err) => {
             console.error("❌ 폰트 로드 실패 (기본 폰트로 진행):", err);
-            continueRender(waitForFont); // 실패하더라도 무한 멈춤 방지
+            safeContinueRender();
         });
+
+        // 🚨 최후의 보루: CDN 에러나 네트워크 지연으로 무한정 멈추는 것을 방지 (10초 후 강제 렌더링 시작)
+        setTimeout(() => {
+            if (!isFontRendered) {
+                console.warn("⏳ 폰트 로딩 시간 초과! 렌더링 락 강제 해제");
+                safeContinueRender();
+            }
+        }, 10000);
 
         registerRoot(RemotionRoot);
     `;
     fs.writeFileSync(entryPath, entryCode, 'utf8');
-
+    
     console.log(`[INFO] 번들링 시작 (Total Frames: ${totalFrames})...`);
 
     try {
