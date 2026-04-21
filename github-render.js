@@ -63,7 +63,6 @@ async function runJsonToVideoRender() {
         };
     `;
     fs.writeFileSync(rootPath, rootCode, 'utf8');
-eSync(rootPath, rootCode, 'utf8');
 
     // 💡 1. CSS 파일을 직접 생성합니다.
     const cssPath = path.resolve(__dirname, 'global.css');
